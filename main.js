@@ -38,7 +38,7 @@ async function draw() {
 	ctx.fillRect(particle.x, particle.y, particle.w, particle.h);
 
 	// TODO: maybe add checkboxes to toggle
-	drawArrow(particle.midpoint().x, particle.midpoint().y, particle.midpoint().x + particle.velocity.x * particle.velocity.mag() * 100, particle.midpoint().y + particle.velocity.y * particle.velocity.mag() * 100);
+	drawVector(particle.midpoint().x, particle.midpoint().y, particle.midpoint().x + particle.velocity.x * particle.velocity.mag() * 100, particle.midpoint().y + particle.velocity.y * particle.velocity.mag() * 100);
 }
 
 function checkBorderCollisions() {
@@ -70,7 +70,7 @@ function applyVelocity(delta) {
 	particle.y += particle.velocity.y * delta;
 }
 
-function drawArrow(fromx, fromy, tox, toy){
+function drawVector(fromx, fromy, tox, toy){
 
 	// TODO: calculate speed and change color accordingly
 
