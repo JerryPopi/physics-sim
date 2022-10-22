@@ -3,21 +3,32 @@ import Particle from './Particle.js';
 const canvas = document.querySelector('canvas');
 const ctx = canvas.getContext('2d');
 
-canvas.height = 1000;
-canvas.width  = 1000;
+canvas.height = document.body.clientHeight;
+canvas.width  = document.body.clientWidth
 
 const g = 0.981;
 const psz = 30;
 const windSpeed = 0.1;
+const pColor = '#A020F0';
 
 let mouseX, mouseY, mouseDownX, mouseDownY, dragging;
 
 let particles = [];
 
-let particle = new Particle(0, 0, psz, psz);
-particle.velocity.x *= .5;
+const spawnParticles = (count = 10) => {
+	for (let i = 0; i < count; i++) {
+		particles.push(new Particle(Math.random() * 500, Math.random() * 500, psz, psz));
+	}
+};
 
-particles.push(particle);
+spawnParticles();
+
+const particleCountInput = document.getElementById('particleCount');
+particleCountInput.addEventListener('change', () => spawnParticles(particleCountInput.value));
+
+function clamp(min, max, val) {
+	return Math.min(Math.max(val, min), max);
+}
 
 let lastTick = performance.now();
 function tick(nowish) {
@@ -28,8 +39,7 @@ function tick(nowish) {
 	applyVelocity(delta);
 
 	draw();
-
-	checkBorderCollisions();
+	checkCollisions();
 }
 
 window.requestAnimationFrame(tick);
@@ -42,8 +52,10 @@ canvas.addEventListener('mousedown', (e) => {
 canvas.addEventListener('mouseup', () => {
 	dragging = false;
 	const factor = document.getElementById('accelFactor').value;
-	particle.velocity.x = (mouseX - mouseDownX) / factor;
-	particle.velocity.y = (mouseY - mouseDownY) / factor;
+	particles.forEach(p => {
+		p.velocity.x += (mouseX - mouseDownX) / factor;
+		p.velocity.y += (mouseY - mouseDownY) / factor;
+	});
 });
 
 canvas.addEventListener('mousemove', (e) => {
@@ -55,18 +67,18 @@ canvas.addEventListener('mousemove', (e) => {
 async function draw() {
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-	ctx.fillStyle = '#cc0000';
-	ctx.fillRect(particle.x, particle.y, particle.w, particle.h);
+	ctx.fillStyle = pColor;
+	particles.forEach(p => {
+		ctx.fillRect(p.x, p.y, p.w, p.h);
 
-	if(dragging) {
-		drawVectorToMouse();
-	}
+		// TODO: maybe add checkboxes to toggle
+		drawVector(p.midpoint().x, p.midpoint().y, p.midpoint().x + p.velocity.x * p.velocity.mag() * 100, p.midpoint().y + p.velocity.y * p.velocity.mag() * 100);
+	});
 
-	// TODO: maybe add checkboxes to toggle
-	drawVector(particle.midpoint().x, particle.midpoint().y, particle.midpoint().x + particle.velocity.x * particle.velocity.mag() * 100, particle.midpoint().y + particle.velocity.y * particle.velocity.mag() * 100);
+	if(dragging) drawVectorToMouse();
 }
 
-function checkBorderCollisions() {
+function checkCollisions() {
 	// windspeed here is not used properly, but its used as a constant for slowing down.
 	// in future it should act all the time, e.g x += windspeed * delta
 
@@ -87,12 +99,24 @@ function checkBorderCollisions() {
 			p.y = 0;
 			p.velocity.y *= - (1 - windSpeed);
 		}
+
+		particles.forEach(p2 => {
+			if(p.x == p2.x && p.y == p2.y) return;
+			if((p.x >= p2.x && p.x <= p2.x + psz) && (p.y >= p2.y && p.y <= p2.y + psz)) {
+				p.velocity.x *= -1;
+				p.velocity.y *= -1;
+				p2.velocity.x *= -1;
+				p2.velocity.y *= -1;
+			}
+		});
 	});
 }
 
 function applyVelocity(delta) {
-	particle.x += particle.velocity.x * delta;
-	particle.y += particle.velocity.y * delta;
+	particles.forEach(p => {
+		p.x += p.velocity.x * delta;
+		p.y += p.velocity.y * delta;
+	});
 }
 
 function getMouseDownPos(e){
@@ -117,12 +141,19 @@ function drawVector(fromx, fromy, tox, toy){
 	tox -= Math.cos(angle) * ((width*1.15));
 	toy -= Math.sin(angle) * ((width*1.15));
 
+	// Color based on size
+	const length = Math.sqrt(Math.pow(tox-fromx, 2), Math.pow(toy-fromy, 2));
+	const hue = clamp(0, 120, 120 - Math.floor((100 - length) * 120 / 100));
+
 
 	//starting path of the arrow from the start square to the end square and drawing the stroke
 	ctx.beginPath();
 	ctx.moveTo(fromx, fromy);
 	ctx.lineTo(tox, toy);
-	ctx.strokeStyle = "#00cc00";
+	// ctx.strokeStyle = "#00cc00";
+	ctx.strokeStyle = `hsl(${hue}, 100%, 50%)`;
+	ctx.fillStyle = `hsl(${hue}, 100%, 50%)`;
+
 	ctx.lineWidth = width;
 	ctx.stroke();
 
@@ -136,9 +167,12 @@ function drawVector(fromx, fromy, tox, toy){
 	ctx.lineTo(tox, toy);
 	ctx.lineTo(tox-headlen*Math.cos(angle-Math.PI/7),toy-headlen*Math.sin(angle-Math.PI/7));
 	//draws the paths created above
-	ctx.strokeStyle = "#00cc00";
+	ctx.strokeStyle = `hsl(${hue}, 100%, 50%)`;
 	ctx.lineWidth = width;
 	ctx.stroke();
-	ctx.fillStyle = "#00cc00";
+	ctx.strokeStyle = `hsl(${hue}, 100%, 50%)`;
 	ctx.fill();
+
+	// Reset color to pColor
+	ctx.fillStyle = pColor;
 }

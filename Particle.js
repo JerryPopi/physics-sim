@@ -6,7 +6,7 @@ export default class Particle {
 		this.y  = y;
 		this.w  = w;
 		this.h  = h;
-		this.velocity = new Vector2().fill(1);
+		this.velocity = new Vector2().fill(Math.random());
 		this.mass = 1;
 	}
 

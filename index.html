@@ -6,11 +6,13 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>Physics Simulation</title>
 </head>
-<body style="width: 1000px; height: 1000px;">
+<body style="width: 100vw; height: 100vh; border: 1px solid black;">
 	<canvas id="canvas"></canvas>
 	<div id="controls">
 		<label for="accelFactor"></label>
 		<input type="number" name="accelFactor" id="accelFactor" value="100">
+		<label for="particleCount"></label>
+		<input type="number" name="particleCount" id="particleCount" value="10">
 	</div>
 	<script src="main.js" type="module"></script>
 </body>
