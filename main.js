@@ -10,6 +10,8 @@ const g = 0.981;
 const psz = 30;
 const windSpeed = 0.1;
 
+let mouseX, mouseY, mouseDownX, mouseDownY, dragging;
+
 let particles = [];
 
 let particle = new Particle(0, 0, psz, psz);
@@ -24,6 +26,7 @@ function tick(nowish) {
 	lastTick = nowish;
 
 	applyVelocity(delta);
+
 	draw();
 
 	checkBorderCollisions();
@@ -31,11 +34,33 @@ function tick(nowish) {
 
 window.requestAnimationFrame(tick);
 
+canvas.addEventListener('mousedown', (e) => {
+	dragging = true;
+	getMouseDownPos(e);
+});
+
+canvas.addEventListener('mouseup', () => {
+	dragging = false;
+	const factor = document.getElementById('accelFactor').value;
+	particle.velocity.x = (mouseX - mouseDownX) / factor;
+	particle.velocity.y = (mouseY - mouseDownY) / factor;
+});
+
+canvas.addEventListener('mousemove', (e) => {
+	const rect = canvas.getBoundingClientRect();
+	mouseX = e.clientX - rect.left;
+	mouseY = e.clientY - rect.top;
+});
+
 async function draw() {
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
 
 	ctx.fillStyle = '#cc0000';
 	ctx.fillRect(particle.x, particle.y, particle.w, particle.h);
+
+	if(dragging) {
+		drawVectorToMouse();
+	}
 
 	// TODO: maybe add checkboxes to toggle
 	drawVector(particle.midpoint().x, particle.midpoint().y, particle.midpoint().x + particle.velocity.x * particle.velocity.mag() * 100, particle.midpoint().y + particle.velocity.y * particle.velocity.mag() * 100);
@@ -68,6 +93,16 @@ function checkBorderCollisions() {
 function applyVelocity(delta) {
 	particle.x += particle.velocity.x * delta;
 	particle.y += particle.velocity.y * delta;
+}
+
+function getMouseDownPos(e){
+	const rect = canvas.getBoundingClientRect();
+	mouseDownX = e.clientX - rect.left;
+	mouseDownY = e.clientY - rect.top;
+}
+
+function drawVectorToMouse() {
+	drawVector(mouseDownX, mouseDownY, mouseX, mouseY);
 }
 
 function drawVector(fromx, fromy, tox, toy){
